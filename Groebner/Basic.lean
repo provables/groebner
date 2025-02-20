@@ -43,13 +43,3 @@ variable (p : MvPolynomial σ ℤ) (n : σ)
 noncomputable def X : MvPolynomial (Fin 2) ℝ := MvPolynomial.X 0
 noncomputable def Y : MvPolynomial (Fin 2) ℝ := MvPolynomial.X 1
 noncomputable def f := (MvPolynomial.C (1 / 2)) * ((X + Y) ^ 2 + (MvPolynomial.C 3) * X + Y)
-
-#check Multiset.map
-#check Finset.val
-#check MvPolynomial.degreeOf_le_totalDegree
-#leansearch "f.totaldegree = n."
-example : f.totalDegree = 2 := by
-  rw [f]
-  ring_nf
-  rw [totalDegree_eq, Finset.sup_def]
-  simp
