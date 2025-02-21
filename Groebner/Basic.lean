@@ -4,12 +4,27 @@ open MvPolynomial MonomialOrder
 
 variable {R : Type*} [CommSemiring R] {σ : Type*} (m : MonomialOrder σ)
 
+/- First attempt:
+Initial monomial as a polynomial. Simple definition, but we cannot compare the results of
+this function via the monomial order, because the order doesn't extend to polynomials.
+-/
 noncomputable def initialMonomial (f : MvPolynomial σ R) : MvPolynomial σ R :=
   letI := Classical.dec (f = 0)
   if f = 0 then
     0
   else
     monomial (m.degree f) 1
+
+/- Second attempt:
+Just return the initial monomial as σ →₀ ℕ . The inconvenience is that we need to use `monomial`
+in every place that we want a polynomial, but now we can at least compare them.
+
+It matches some theorems in the file `MvPolynomial.Ideal`.
+
+It could be cool to definae some coercions, since there is a natural injection from monomials to
+polynomials.
+-/
+noncomputable def initialMonomial2 (f : MvPolynomial σ R) : σ →₀ ℕ := m.degree f
 
 theorem initial_eq_zero_of_zero : initialMonomial m 0 = (0 : MvPolynomial σ R) := by
   unfold initialMonomial
@@ -19,16 +34,26 @@ theorem prod_initial_of_prod (f g : MvPolynomial σ R) :
     initialMonomial m (f * g) = (initialMonomial m f) * (initialMonomial m g) := by
   sorry
 
-/- Not working. Need to figure out how to do `max` with the monomial order -/
-theorem sum_initial_le_max (f g : MvPolynomial σ R) :
-    initialMonomial m (f + g) ≤ sup (initialMonomial m f) (initialMonomial m g) := by
+theorem prod_initial_of_prod2 (f g : MvPolynomial σ R) :
+    monomial (initialMonomial2 m (f * g)) 1 = monomial (initialMonomial2 m f) 1 * monomial (initialMonomial2 m g) 1 := by
   sorry
+
+/- Working, if using `initialMonomial2` -/
+theorem sum_initial_le_max (f g : MvPolynomial σ R) :
+    m.toSyn (initialMonomial2 m (f + g)) ≤
+      m.toSyn (initialMonomial2 m f) ⊔ m.toSyn (initialMonomial2 m g) := by
+  unfold initialMonomial2
+  exact degree_add_le
 
 noncomputable def initialCoeff (f : MvPolynomial σ R) : R :=
   f.leadingCoeff m.toSyn
 
 noncomputable def initialIdeal (I : Ideal (MvPolynomial σ R)) : Ideal (MvPolynomial σ R) :=
   Ideal.span { initialMonomial m f | f ∈ I }
+
+/- Really need to use `f ≠ 0` in this definition, but that matches the book -/
+noncomputable def initialIdeal2 (I : Ideal (MvPolynomial σ R)) : Ideal (MvPolynomial σ R) :=
+  Ideal.span { g | ∃ f ∈ I, f ≠ 0 ∧ monomial (initialMonomial2 m f) 1 = g }
 
 #check IsNoetherian
 
