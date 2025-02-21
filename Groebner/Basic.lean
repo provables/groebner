@@ -13,7 +13,16 @@ noncomputable def initialMonomial (f : MvPolynomial σ R) : MvPolynomial σ R :=
 
 theorem initial_eq_zero_of_zero : initialMonomial m 0 = (0 : MvPolynomial σ R) := by
   unfold initialMonomial
-  simp [degree_zero]
+  simp only [↓reduceIte]
+
+theorem prod_initial_of_prod (f g : MvPolynomial σ R) :
+    initialMonomial m (f * g) = (initialMonomial m f) * (initialMonomial m g) := by
+  sorry
+
+/- Not working. Need to figure out how to do `max` with the monomial order -/
+theorem sum_initial_le_max (f g : MvPolynomial σ R) :
+    initialMonomial m (f + g) ≤ sup (initialMonomial m f) (initialMonomial m g) := by
+  sorry
 
 noncomputable def initialCoeff (f : MvPolynomial σ R) : R :=
   f.leadingCoeff m.toSyn
@@ -21,8 +30,15 @@ noncomputable def initialCoeff (f : MvPolynomial σ R) : R :=
 noncomputable def initialIdeal (I : Ideal (MvPolynomial σ R)) : Ideal (MvPolynomial σ R) :=
   Ideal.span { initialMonomial m f | f ∈ I }
 
+#check IsNoetherian
 
 /- Playground -/
+
+#check em
+#check Classical.propDecidable
+
+noncomputable def myVars [DecidableEq σ] (p : MvPolynomial σ R) : Finset σ :=
+  p.degrees.toFinset
 
 #loogle MvPolynomial, "leadingCoeff"
 
