@@ -26,6 +26,10 @@ polynomials.
 -/
 noncomputable def initialMonomial2 (f : MvPolynomial σ R) : σ →₀ ℕ := m.degree f
 
+/- This coercion seems to be working, see `prod_initial_of_prod2` -/
+noncomputable instance : Coe (σ →₀ ℕ) (MvPolynomial σ R) where
+  coe m := monomial m 1
+
 theorem initial_eq_zero_of_zero : initialMonomial m 0 = (0 : MvPolynomial σ R) := by
   unfold initialMonomial
   simp only [↓reduceIte]
@@ -35,7 +39,7 @@ theorem prod_initial_of_prod (f g : MvPolynomial σ R) :
   sorry
 
 theorem prod_initial_of_prod2 (f g : MvPolynomial σ R) :
-    monomial (initialMonomial2 m (f * g)) 1 = monomial (initialMonomial2 m f) 1 * monomial (initialMonomial2 m g) 1 := by
+    ((initialMonomial2 m (f * g)) : MvPolynomial σ ℝ) = initialMonomial2 m f * initialMonomial2 m g := by
   sorry
 
 /- Working, if using `initialMonomial2` -/
