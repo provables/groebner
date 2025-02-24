@@ -2,7 +2,7 @@ import Mathlib
 
 open MvPolynomial MonomialOrder
 
-variable {R : Type*} [CommSemiring R] {σ : Type*} (m : MonomialOrder σ)
+variable {R : Type*} [CommSemiring R] [Nontrivial R] {σ : Type*} (m : MonomialOrder σ)
 
 /- First attempt:
 Initial monomial as a polynomial. Simple definition, but we cannot compare the results of
@@ -59,32 +59,27 @@ noncomputable def initialIdeal (I : Ideal (MvPolynomial σ R)) : Ideal (MvPolyno
 noncomputable def initialIdeal2 (I : Ideal (MvPolynomial σ R)) : Ideal (MvPolynomial σ R) :=
   Ideal.span { g | ∃ f ∈ I, f ≠ 0 ∧ monomial (initialMonomial2 m f) 1 = g }
 
-#check IsNoetherian
+/-
+An alternative definition of Monomials, by converting the aditive structure of σ →₀ ℕ into
+a multiplicative one.
+-/
+abbrev Monomial σ := Multiplicative (σ →₀ ℕ)
 
-/- Playground -/
+/-
+We define a monoid morphism which is injective, i.e., the usual embedding of monomials
+into polynomials.
+-/
+noncomputable def toMvPolynomial : Monomial σ →* MvPolynomial σ R where
+  toFun m := monomial m 1
+  map_one' := rfl
+  map_mul' := by
+    dsimp only [OneHom.toFun_eq_coe, OneHom.coe_mk]
+    intro x y
+    simp only [monomial_mul]
+    congr
+    ring
 
-#check em
-#check Classical.propDecidable
-
-noncomputable def myVars [DecidableEq σ] (p : MvPolynomial σ R) : Finset σ :=
-  p.degrees.toFinset
-
-#loogle MvPolynomial, "leadingCoeff"
-
-#check Module.Free.of_basis
-#check initialMonomial MonomialOrder.degLex (X (0 : Fin 1))
-
-#check Polynomial.leadingCoeff
-#check Polynomial.leadingCoeff_C
-#check Ideal.FG
-#check Ideal.span
-
-variable (p : MvPolynomial σ ℤ) (n : σ)
-#check initialCoeff m p
-#check (initialCoeff m p) • (initialMonomial m p)
-
-#check p.leadingCoeff m.toSyn
-
-noncomputable def X : MvPolynomial (Fin 2) ℝ := MvPolynomial.X 0
-noncomputable def Y : MvPolynomial (Fin 2) ℝ := MvPolynomial.X 1
-noncomputable def f := (MvPolynomial.C (1 / 2)) * ((X + Y) ^ 2 + (MvPolynomial.C 3) * X + Y)
+theorem toMvPolynomial_injective :
+    Function.Injective (toMvPolynomial : Monomial σ →* MvPolynomial σ R) := by
+  apply monomial_left_injective
+  exact one_ne_zero
