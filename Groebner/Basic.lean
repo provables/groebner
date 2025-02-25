@@ -83,3 +83,42 @@ theorem toMvPolynomial_injective :
     Function.Injective (toMvPolynomial : Monomial σ →* MvPolynomial σ R) := by
   apply monomial_left_injective
   exact one_ne_zero
+
+noncomputable instance : Coe (Monomial σ) (MvPolynomial σ R) where
+  coe := toMvPolynomial
+
+structure OrderedMonomial (m : MonomialOrder σ) where
+  toMonomial : Monomial σ
+
+noncomputable instance : Coe (Monomial σ) (OrderedMonomial m) where
+  coe m := ⟨ m ⟩
+
+instance : LE (OrderedMonomial m) where
+  le u v := u.toMonomial ≼[m] v.toMonomial
+
+/-
+The regular monomial X^n, for n : σ
+-/
+noncomputable def X (n : σ) : Monomial σ := Finsupp.single n 1
+/-
+The monomial X^n considered with the order m
+TODO: maybe nicer notation for this monomial?
+-/
+noncomputable def Xord (n : σ) : OrderedMonomial m := ⟨ X n ⟩
+
+theorem ordMon_le_iff_monomialOrder_le (u v : OrderedMonomial m) :
+  u ≤ v ↔ u.toMonomial ≼[m] v.toMonomial := by rfl
+
+/-
+Example: X < Y in the lexicographic order
+-/
+example : Xord MonomialOrder.lex (0 : Fin 1) ≤ Xord MonomialOrder.lex 1 := by
+  unfold Xord
+  rw [ordMon_le_iff_monomialOrder_le]
+  simp
+
+/-
+Proposition 2.2.i
+-/
+theorem le_of_div (u v : Monomial σ) (h : (u : MvPolynomial σ R) ∣ v) :
+  (u : OrderedMonomial m) ≤ v := by sorry
