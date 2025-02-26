@@ -2,7 +2,7 @@ import Mathlib
 
 open MvPolynomial MonomialOrder
 
-variable {R : Type*} [CommSemiring R] [Nontrivial R] {σ : Type*} (m : MonomialOrder σ)
+variable {R : Type*} [CommSemiring R] {σ : Type*} (m : MonomialOrder σ)
 
 /- First attempt:
 Initial monomial as a polynomial. Simple definition, but we cannot compare the results of
@@ -79,7 +79,7 @@ noncomputable def toMvPolynomial : Monomial σ →* MvPolynomial σ R where
     congr
     ring
 
-theorem toMvPolynomial_injective :
+theorem toMvPolynomial_injective [Nontrivial R] :
     Function.Injective (toMvPolynomial : Monomial σ →* MvPolynomial σ R) := by
   apply monomial_left_injective
   exact one_ne_zero
@@ -91,7 +91,7 @@ structure OrderedMonomial (m : MonomialOrder σ) where
   toMonomial : Monomial σ
 
 noncomputable instance : Coe (Monomial σ) (OrderedMonomial m) where
-  coe m := ⟨ m ⟩
+  coe m := ⟨m⟩
 
 instance : LE (OrderedMonomial m) where
   le u v := u.toMonomial ≼[m] v.toMonomial
@@ -102,23 +102,37 @@ The regular monomial X^n, for n : σ
 noncomputable def X (n : σ) : Monomial σ := Finsupp.single n 1
 /-
 The monomial X^n considered with the order m
-TODO: maybe nicer notation for this monomial?
 -/
-noncomputable def Xord (n : σ) : OrderedMonomial m := ⟨ X n ⟩
+noncomputable def Xord (m : MonomialOrder σ) (n : σ) : OrderedMonomial m := ⟨X n⟩
+notation:80 "X[" n "," m "]" => Xord m n
 
 theorem ordMon_le_iff_monomialOrder_le (u v : OrderedMonomial m) :
   u ≤ v ↔ u.toMonomial ≼[m] v.toMonomial := by rfl
 
+theorem monomialOrder_le_iff_le (u v : Monomial σ) :
+  u ≼[m] v ↔ (u : OrderedMonomial m) ≤ v := by rfl
+
 /-
-Example: X < Y in the lexicographic order
+Example: Y < X in the lexicographic order
 -/
-example : Xord MonomialOrder.lex (0 : Fin 1) ≤ Xord MonomialOrder.lex 1 := by
-  unfold Xord
-  rw [ordMon_le_iff_monomialOrder_le]
-  simp
+example : X[(1 : Fin 2),MonomialOrder.lex] ≤ X[0,_] := by
+  refine (monomialOrder_le_iff_le _ _ _).mp ?_
+  apply MonomialOrder.lex_le_iff.mpr
+  unfold _root_.X
+  exact Finsupp.Lex.single_le_iff.mpr <| Fin.zero_le 1
+
 
 /-
 Proposition 2.2.i
 -/
-theorem le_of_div (u v : Monomial σ) (h : (u : MvPolynomial σ R) ∣ v) :
-  (u : OrderedMonomial m) ≤ v := by sorry
+theorem le_of_div [Nontrivial R] (u v : Monomial σ) (h : (u : MvPolynomial σ R) ∣ v) :
+    (u : OrderedMonomial m) ≤ v := by
+  simp only [toMvPolynomial, MonoidHom.coe_mk, OneHom.coe_mk] at h
+  rw [monomial_dvd_monomial] at h
+  rcases h with (h1 | h2)
+  · exfalso
+    exact one_ne_zero h1
+  · rw [<- monomialOrder_le_iff_le]
+    exact m.toSyn_monotone h2
+
+#check _root_.X
