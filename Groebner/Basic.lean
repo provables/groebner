@@ -134,5 +134,3 @@ theorem le_of_div [Nontrivial R] (u v : Monomial σ) (h : (u : MvPolynomial σ R
     exact one_ne_zero h1
   · rw [<- monomialOrder_le_iff_le]
     exact m.toSyn_monotone h2
-
-#check _root_.X
