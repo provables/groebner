@@ -120,12 +120,9 @@ theorem ordMon_le_iff_monomialOrder_le (u v : OrderedMonomial m) :
 theorem monomialOrder_le_iff_le (u v : Monomial σ) :
   u ≼[m] v ↔ (u : OrderedMonomial m) ≤ v := by rfl
 
-instance monDivLE : LE (Monomial σ) where
-  le u v := u ∣ v
-
-instance monDivLT : LT (Monomial σ) where
-  lt u v := u ∣ v ∧ ¬(v ∣ u)
-
+/-
+Divisibility in monomials is the same as in polynomials
+-/
 theorem monomial_dvd_iff_dvd [Nontrivial R] (u v : Monomial σ) :
     u ∣ v ↔ (u : MvPolynomial σ R) ∣ v := by
   constructor <;> intro h
@@ -138,23 +135,30 @@ theorem monomial_dvd_iff_dvd [Nontrivial R] (u v : Monomial σ) :
     rw [le_iff_exists_add] at h
     exact h
 
-theorem foo (u v : Monomial σ) : u ∣ v ↔ u.toAdd ≤ v.toAdd := by
-  sorry
+/-
+Divisibility in monomials is the pointwise order in functions σ →₀ ℕ
+-/
+theorem mon_dvd_iff_le (u v : Monomial σ) : u ∣ v ↔ u.toAdd ≤ v.toAdd := by
+  constructor
+  · intro h
+    obtain ⟨c, hc⟩ := h
+    rw [le_iff_exists_add]
+    use c.toAdd
+    exact hc
+  · intro h
+    rw [le_iff_exists_add] at h
+    obtain ⟨c, hc⟩ := h
+    use Multiplicative.ofAdd c
+    exact hc
 
-private theorem monomial_dvd_antisymm (u v : Monomial σ) : u ≤ v → v ≤ u → u = v := by
-  intro ha hb
-  simp only [monDivLE] at ha
-  rw [foo] at ha
-  simp only [monDivLE] at hb
-  rw [foo] at hb
-  exact Finsupp.partialorder.le_antisymm _ _ ha hb
-
-instance monDivPartialOrder : PartialOrder (Monomial σ) where
-  le := monDivLE.le
-  lt := monDivLT.lt
-  le_refl := dvd_refl
-  le_trans := fun _ _ _ ↦ dvd_trans
-  le_antisymm := monomial_dvd_antisymm
+/-
+The partial order in monomials is the divisibility partial order
+-/
+theorem foo (u v : Monomial σ) : u ≤ v ↔ u ∣ v := by
+  constructor
+  · exact fun _ => by rwa [mon_dvd_iff_le]
+  · intro h
+    rwa [mon_dvd_iff_le] at h
 
 /-
 Example: Y < X in the lexicographic order
