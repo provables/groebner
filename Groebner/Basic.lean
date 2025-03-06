@@ -2,13 +2,15 @@ import Mathlib
 
 open MvPolynomial MonomialOrder
 
+noncomputable section
+
 variable {R : Type*} [CommSemiring R] {σ : Type*} (m : MonomialOrder σ)
 
 /- First attempt:
 Initial monomial as a polynomial. Simple definition, but we cannot compare the results of
 this function via the monomial order, because the order doesn't extend to polynomials.
 -/
-noncomputable def initialMonomial (f : MvPolynomial σ R) : MvPolynomial σ R :=
+def initialMonomial (f : MvPolynomial σ R) : MvPolynomial σ R :=
   letI := Classical.dec (f = 0)
   if f = 0 then
     0
@@ -24,10 +26,10 @@ It matches some theorems in the file `MvPolynomial.Ideal`.
 It could be cool to definae some coercions, since there is a natural injection from monomials to
 polynomials.
 -/
-noncomputable def initialMonomial2 (f : MvPolynomial σ R) : σ →₀ ℕ := m.degree f
+def initialMonomial2 (f : MvPolynomial σ R) : σ →₀ ℕ := m.degree f
 
 /- This coercion seems to be working, see `prod_initial_of_prod2` -/
-noncomputable instance : Coe (σ →₀ ℕ) (MvPolynomial σ R) where
+instance : Coe (σ →₀ ℕ) (MvPolynomial σ R) where
   coe m := monomial m 1
 
 theorem initial_eq_zero_of_zero : initialMonomial m 0 = (0 : MvPolynomial σ R) := by
@@ -69,7 +71,7 @@ abbrev Monomial σ := Multiplicative (σ →₀ ℕ)
 We define a monoid morphism which is injective, i.e., the usual embedding of monomials
 into polynomials.
 -/
-noncomputable def toMvPolynomial : Monomial σ →* MvPolynomial σ R where
+def toMvPolynomial : Monomial σ →* MvPolynomial σ R where
   toFun m := monomial m 1
   map_one' := rfl
   map_mul' := by
@@ -84,13 +86,19 @@ theorem toMvPolynomial_injective [Nontrivial R] :
   apply monomial_left_injective
   exact one_ne_zero
 
-noncomputable instance : Coe (Monomial σ) (MvPolynomial σ R) where
+instance : Coe (σ →₀ ℕ) (Monomial σ) where
+  coe f := Multiplicative.ofAdd f
+
+instance : Coe (Monomial σ) (σ →₀ ℕ) where
+  coe m := Multiplicative.toAdd m
+
+instance : Coe (Monomial σ) (MvPolynomial σ R) where
   coe := toMvPolynomial
 
 structure OrderedMonomial (m : MonomialOrder σ) where
   toMonomial : Monomial σ
 
-noncomputable instance : Coe (Monomial σ) (OrderedMonomial m) where
+instance : Coe (Monomial σ) (OrderedMonomial m) where
   coe m := ⟨m⟩
 
 instance : LE (OrderedMonomial m) where
@@ -99,11 +107,11 @@ instance : LE (OrderedMonomial m) where
 /-
 The regular monomial X^n, for n : σ
 -/
-noncomputable def X (n : σ) : Monomial σ := Finsupp.single n 1
+def X (n : σ) : Monomial σ := Finsupp.single n 1
 /-
 The monomial X^n considered with the order m
 -/
-noncomputable def Xord (m : MonomialOrder σ) (n : σ) : OrderedMonomial m := ⟨X n⟩
+def Xord (m : MonomialOrder σ) (n : σ) : OrderedMonomial m := ⟨X n⟩
 notation:80 "X[" n "," m "]" => Xord m n
 
 theorem ordMon_le_iff_monomialOrder_le (u v : OrderedMonomial m) :
@@ -111,6 +119,42 @@ theorem ordMon_le_iff_monomialOrder_le (u v : OrderedMonomial m) :
 
 theorem monomialOrder_le_iff_le (u v : Monomial σ) :
   u ≼[m] v ↔ (u : OrderedMonomial m) ≤ v := by rfl
+
+instance monDivLE : LE (Monomial σ) where
+  le u v := u ∣ v
+
+instance monDivLT : LT (Monomial σ) where
+  lt u v := u ∣ v ∧ ¬(v ∣ u)
+
+theorem monomial_dvd_iff_dvd [Nontrivial R] (u v : Monomial σ) :
+    u ∣ v ↔ (u : MvPolynomial σ R) ∣ v := by
+  constructor <;> intro h
+  · rw [dvd_def] at h
+    obtain ⟨c, hc⟩ := h
+    rw [hc, map_mul]
+    apply dvd_mul_right
+  · unfold toMvPolynomial at h
+    simp at h
+    rw [le_iff_exists_add] at h
+    exact h
+
+theorem foo (u v : Monomial σ) : u ∣ v ↔ u.toAdd ≤ v.toAdd := by
+  sorry
+
+private theorem monomial_dvd_antisymm (u v : Monomial σ) : u ≤ v → v ≤ u → u = v := by
+  intro ha hb
+  simp only [monDivLE] at ha
+  rw [foo] at ha
+  simp only [monDivLE] at hb
+  rw [foo] at hb
+  exact Finsupp.partialorder.le_antisymm _ _ ha hb
+
+instance monDivPartialOrder : PartialOrder (Monomial σ) where
+  le := monDivLE.le
+  lt := monDivLT.lt
+  le_refl := dvd_refl
+  le_trans := fun _ _ _ ↦ dvd_trans
+  le_antisymm := monomial_dvd_antisymm
 
 /-
 Example: Y < X in the lexicographic order
