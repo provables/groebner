@@ -154,11 +154,14 @@ theorem mon_dvd_iff_le (u v : Monomial σ) : u ∣ v ↔ u.toAdd ≤ v.toAdd := 
 /-
 The partial order in monomials is the divisibility partial order
 -/
-theorem foo (u v : Monomial σ) : u ≤ v ↔ u ∣ v := by
+theorem le_iff_dvd (u v : Monomial σ) : u ≤ v ↔ u ∣ v := by
   constructor
   · exact fun _ => by rwa [mon_dvd_iff_le]
   · intro h
     rwa [mon_dvd_iff_le] at h
+
+theorem dickson_lemma (s : Set (Monomial σ)) (h : Nonempty s) : Finite {x ∈ s | IsMin x} := by
+  sorry
 
 /-
 Example: Y < X in the lexicographic order
