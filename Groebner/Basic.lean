@@ -104,10 +104,40 @@ instance : Coe (Monomial σ) (OrderedMonomial m) where
 instance : LE (OrderedMonomial m) where
   le u v := u.toMonomial ≼[m] v.toMonomial
 
+noncomputable def IsMonomialIdeal (I : Ideal (MvPolynomial σ R)) : Prop :=
+  ∃ S : Set (Monomial σ), Ideal.span {(g : MvPolynomial σ R) | g ∈ S} = I
+
 /-
 The regular monomial X^n, for n : σ
 -/
 def X (n : σ) : Monomial σ := Finsupp.single n 1
+
+example (n : σ): IsMonomialIdeal (Ideal.span {(_root_.X n : MvPolynomial σ R)}) := by
+  use {_root_.X n}
+  congr
+  ext y
+  constructor
+  · rintro ⟨m, ⟨g, ⟨hg, hg2⟩⟩⟩
+    rw [g]
+    trivial
+  · sorry
+
+theorem monIdeal_iff_supp (I : Ideal (MvPolynomial σ R)) :
+    IsMonomialIdeal I ↔ ∀ f ∈ I, {(m : MvPolynomial σ R) | m ∈ f.support} ⊆ I := by
+  constructor
+  · intro hI f hfI
+    obtain ⟨S, hS⟩ := hI
+    rw [<- hS] at hfI
+    let S' : Set (MvPolynomial σ R):= { x | ∃ g ∈ S, toMvPolynomial g = x}
+    let p (f : MvPolynomial σ R) (h : f ∈ Ideal.span S') : Prop :=
+      {x | ∃ m ∈ f.support, (monomial m) (1 : R) = x} ⊆ I
+    have mem : ∀ (x) (h : x ∈ S'), p x (Ideal.subset_span h) := by sorry
+    have zero : p 0 (Ideal.zero_mem _) := by sorry
+    have add : ∀ x y hx hy, p x hx → p y hy → p (x + y) (Ideal.add_mem _ ‹_› ‹_›) := by sorry
+    have smul : ∀ (a : MvPolynomial σ R) (x hx), p x hx → p (a * x) (Ideal.mul_mem_left _ _ ‹_›) := by sorry
+    exact Submodule.span_induction mem zero add smul hfI
+  · sorry
+
 /-
 The monomial X^n considered with the order m
 -/
@@ -160,7 +190,11 @@ theorem le_iff_dvd (u v : Monomial σ) : u ≤ v ↔ u ∣ v := by
   · intro h
     rwa [mon_dvd_iff_le] at h
 
-theorem dickson_lemma (s : Set (Monomial σ)) (h : Nonempty s) : Finite {x ∈ s | IsMin x} := by
+#check MvPolynomial.support
+#check Ideal.FG
+
+theorem dickson_lemma (hs : Finite σ) (s : Set (Monomial σ)) (h : Nonempty s) :
+    Finite {x ∈ s | IsMin x} := by
   sorry
 
 /-
