@@ -120,7 +120,12 @@ example (n : σ): IsMonomialIdeal (Ideal.span {(_root_.X n : MvPolynomial σ R)}
   · rintro ⟨m, ⟨g, ⟨hg, hg2⟩⟩⟩
     rw [g]
     trivial
-  · sorry
+  · intro h1
+    use _root_.X n
+    constructor
+    · simp
+    · rw [h1]
+
 
 theorem monIdeal_iff_supp (I : Ideal (MvPolynomial σ R)) :
     IsMonomialIdeal I ↔ ∀ f ∈ I, {(m : MvPolynomial σ R) | m ∈ f.support} ⊆ I := by
