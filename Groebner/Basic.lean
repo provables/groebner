@@ -114,6 +114,38 @@ noncomputable def IsMonomialIdeal (I : Ideal (MvPolynomial σ R)) : Prop :=
 theorem monIdeal_of (S : Set (Monomial σ)) : IsMonomialIdeal (MonomialIdealOf S R) := by
   use S
 
+theorem IsMonomialIdeal_iff_MvPolynomial_span (I : Ideal (MvPolynomial σ R)) :
+  IsMonomialIdeal I ↔
+    ∃ S : Set (MvPolynomial σ R), (∀ p ∈ S, ∃ m : Monomial σ, p = m) ∧ Ideal.span S = I := by
+  constructor
+  · rintro ⟨S, hS⟩
+    use {(m : MvPolynomial σ R) | m ∈ S}
+    constructor
+    · rintro p ⟨m, hm⟩
+      use m
+      exact hm.right.symm
+    · rw [← hS]
+      rfl
+  · rintro ⟨S, hS⟩
+    let S' := {(m : Monomial σ) | ∃ f ∈ S, f = m}
+    use S'
+    rw [<- hS.right]
+    unfold MonomialIdealOf S'
+    have : {x | ∃ g ∈ {m | ∃ f ∈ S, f = toMvPolynomial m}, toMvPolynomial g = x} = S := by
+      ext x
+      constructor
+      · rintro ⟨x, ⟨hxl, hxr⟩⟩
+        obtain ⟨m, hm⟩ := hxl
+        rw [<- hxr, <- hm.right]
+        exact hm.left
+      · intro hx
+        obtain ⟨m, hm⟩ := hS.left x hx
+        use m
+        constructor
+        · use x
+        · exact hm.symm
+    rw [this]
+
 /-
 The regular monomial X^n, for n : σ
 -/
