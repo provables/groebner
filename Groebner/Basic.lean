@@ -104,29 +104,28 @@ instance : Coe (Monomial σ) (OrderedMonomial m) where
 instance : LE (OrderedMonomial m) where
   le u v := u.toMonomial ≼[m] v.toMonomial
 
+noncomputable def MonomialIdealOf (S: Set (Monomial σ))(R : Type*) [CommSemiring R]
+   := Ideal.span {(g : MvPolynomial σ R) | g ∈ S}
+
 noncomputable def IsMonomialIdeal (I : Ideal (MvPolynomial σ R)) : Prop :=
-  ∃ S : Set (Monomial σ), Ideal.span {(g : MvPolynomial σ R) | g ∈ S} = I
+  ∃ S : Set (Monomial σ), MonomialIdealOf S R = I
+  -- ∃ S : Set (Monomial σ), Ideal.span {(g : MvPolynomial σ R) | g ∈ S} = I
+
+theorem monIdeal_of (S: Set (Monomial σ)) : IsMonomialIdeal (MonomialIdealOf S R : Ideal (MvPolynomial σ R)) := by
+  use S
 
 /-
 The regular monomial X^n, for n : σ
 -/
 def X (n : σ) : Monomial σ := Finsupp.single n 1
 
-example (n : σ): IsMonomialIdeal (Ideal.span {(_root_.X n : MvPolynomial σ R)}) := by
-  use {_root_.X n}
-  congr
-  ext y
-  constructor
-  · rintro ⟨m, ⟨g, ⟨hg, hg2⟩⟩⟩
-    rw [g]
-    trivial
-  · intro h1
-    use _root_.X n
-    constructor
-    · simp
-    · rw [h1]
+-- example (n : σ): IsMonomialIdeal (Ideal.span {(_root_.X n : MvPolynomial σ R)}) := by
+example (n : σ): IsMonomialIdeal (MonomialIdealOf {_root_.X n } R) :=
+  monIdeal_of {_root_.X n }
 
+#check Ideal.mem_span
 
+-- Theorem 1.7 in Herzog
 theorem monIdeal_iff_supp (I : Ideal (MvPolynomial σ R)) :
     IsMonomialIdeal I ↔ ∀ f ∈ I, {(m : MvPolynomial σ R) | m ∈ f.support} ⊆ I := by
   constructor
@@ -136,12 +135,47 @@ theorem monIdeal_iff_supp (I : Ideal (MvPolynomial σ R)) :
     let S' : Set (MvPolynomial σ R):= { x | ∃ g ∈ S, toMvPolynomial g = x}
     let p (f : MvPolynomial σ R) (h : f ∈ Ideal.span S') : Prop :=
       {x | ∃ m ∈ f.support, (monomial m) (1 : R) = x} ⊆ I
-    have mem : ∀ (x) (h : x ∈ S'), p x (Ideal.subset_span h) := by sorry
-    have zero : p 0 (Ideal.zero_mem _) := by sorry
+    have mem : ∀ (x) (h : x ∈ S'), p x (Ideal.subset_span h) := by
+       intro x hx
+       unfold p
+       intro a ha
+       obtain ⟨ x1, ⟨ hx1l, hx1r⟩ ⟩ := ha
+       have : a ∈ { x | ∃ g ∈ S, toMvPolynomial g = x } := by
+         obtain ⟨ x2, hx2 ⟩ := hx
+         use x2
+         constructor
+         · exact hx2.left
+         · rw [← hx1r]
+           simp [toMvPolynomial] at hx2
+           rw [← hx2.right] at hx1l
+           apply support_monomial_subset at hx1l
+           rw [← Finset.eq_of_mem_singleton hx1l]
+           rfl
+       rw [← hS]
+       exact Ideal.subset_span this
+
+    have zero : p 0 (Ideal.zero_mem _) := by
+      unfold p
+      rw [MvPolynomial.support_zero]
+      simp
+      -- intro a ha
+      -- whnf at ha
+      -- obtain ⟨ m, hm ⟩ := ha
+      -- rw [MvPolynomial.support_zero] at hm
+      -- exfalso
+      -- exact Finset.not_mem_empty m hm.left
+
     have add : ∀ x y hx hy, p x hx → p y hy → p (x + y) (Ideal.add_mem _ ‹_› ‹_›) := by sorry
     have smul : ∀ (a : MvPolynomial σ R) (x hx), p x hx → p (a * x) (Ideal.mul_mem_left _ _ ‹_›) := by sorry
     exact Submodule.span_induction mem zero add smul hfI
-  · sorry
+  · intro hm
+    use {(m : Monomial σ) | ∃ f ∈ I, m ∈ f.support}
+    ext y
+    constructor
+    sorry
+    -- · intro hy
+
+
 
 /-
 The monomial X^n considered with the order m
@@ -198,9 +232,14 @@ theorem le_iff_dvd (u v : Monomial σ) : u ≤ v ↔ u ∣ v := by
 #check MvPolynomial.support
 #check Ideal.FG
 
+-- Theorem 1.9 in Herzog
 theorem dickson_lemma (hs : Finite σ) (s : Set (Monomial σ)) (h : Nonempty s) :
     Finite {x ∈ s | IsMin x} := by
   sorry
+
+-- Corollary 1.10 in Herzog
+theorem fin_gen (I : Ideal (MvPolynomial σ R)) (S : Set (Monomial σ )) (hI: MonomialIdealOf S R = I) :
+   ∃ S' : Set (Monomial σ), S'⊆ S ∧ Finite S' ∧ MonomialIdealOf S' R = I := by sorry
 
 /-
 Example: Y < X in the lexicographic order
