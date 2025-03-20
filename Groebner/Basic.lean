@@ -168,6 +168,16 @@ theorem IsMonomialIdeal_iff_MvPolynomial_span (I : Ideal (MvPolynomial σ R)) :
         · exact hm.symm
     rw [this]
 
+theorem monomialIdealOf_sub (S: Set (Monomial σ)) (T: Set (Monomial σ)) (R : Type*) [CommSemiring R]
+    (h: S ⊆ T) : MonomialIdealOf S R ≤ MonomialIdealOf T R := by
+  unfold MonomialIdealOf
+  have sub : {x : MvPolynomial σ R | ∃ g ∈ S, g = x} ⊆ {y | ∃ g ∈ T, g = y} := by
+    intro a ha
+    obtain ⟨ g, hg ⟩ := ha
+    use g
+    exact ⟨h hg.left, hg.right ⟩
+  exact Ideal.span_mono sub
+
 /-
 The regular monomial X^n, for n : σ
 -/
