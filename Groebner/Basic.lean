@@ -104,6 +104,28 @@ instance : Coe (Monomial σ) (OrderedMonomial m) where
 instance : LE (OrderedMonomial m) where
   le u v := u.toMonomial ≼[m] v.toMonomial
 
+def IsMonomial (f : MvPolynomial σ R) := ∃ m : Monomial σ, f = m
+
+theorem IsMonomial_iff_support [DecidableEq σ] [DecidableEq R] [Nontrivial R]
+    (f : MvPolynomial σ R) : IsMonomial f ↔ ∃ m : Monomial σ, f.support = {m} ∧ coeff m f = 1 := by
+  constructor
+  · rintro ⟨m, hm⟩
+    use m
+    simp [toMvPolynomial] at hm
+    simp [hm, support_monomial, reduceIte]
+  · rintro ⟨m, ⟨hml, hmr⟩⟩
+    use m
+    simp [toMvPolynomial]
+    ext x
+    simp [hml]
+    by_cases h : m = x
+    · simp [h, reduceIte]
+      rwa [<- h]
+    · simp [h]
+      apply not_mem_support_iff.mp
+      by_contra hx
+      rw [hml] at hx
+      exact h <| (Finset.eq_of_mem_singleton hx).symm
 
 noncomputable def MonomialIdealOf (S: Set (Monomial σ)) (R : Type*) [CommSemiring R] :=
   Ideal.span {(g : MvPolynomial σ R) | g ∈ S}
@@ -262,9 +284,8 @@ theorem bar
   (I : Ideal (MvPolynomial σ R))
   (S : Set (Monomial σ))
   (hI : MonomialIdealOf S R = I) :
-    ∃ S' : Set (Monomial σ),
-      S' ⊆ S ∧ Finite S' ∧ MonomialIdealOf S' R = I := by
-    sorry
+    ∃ S' ⊆ S, Finite S' ∧ MonomialIdealOf S' R = I := by
+  sorry
 
 /-
 Example: Y < X in the lexicographic order
