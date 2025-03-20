@@ -138,7 +138,7 @@ theorem monIdeal_of (S : Set (Monomial σ)) : IsMonomialIdeal (MonomialIdealOf S
 
 theorem IsMonomialIdeal_iff_MvPolynomial_span (I : Ideal (MvPolynomial σ R)) :
   IsMonomialIdeal I ↔
-    ∃ S : Set (MvPolynomial σ R), (∀ p ∈ S, ∃ m : Monomial σ, p = m) ∧ Ideal.span S = I := by
+    ∃ S : Set (MvPolynomial σ R), (∀ p ∈ S, IsMonomial p) ∧ Ideal.span S = I := by
   constructor
   · rintro ⟨S, hS⟩
     use {(m : MvPolynomial σ R) | m ∈ S}
