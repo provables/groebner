@@ -114,6 +114,19 @@ noncomputable def IsMonomialIdeal (I : Ideal (MvPolynomial σ R)) : Prop :=
 theorem monIdeal_of (S: Set (Monomial σ)) : IsMonomialIdeal (MonomialIdealOf S R : Ideal (MvPolynomial σ R)) := by
   use S
 
+#check Ideal.span_mono
+
+theorem monomialIdealOf_sub (S: Set (Monomial σ)) (T: Set (Monomial σ)) (R : Type*) [CommSemiring R]
+    (h: S ⊆ T) : MonomialIdealOf S R ≤ MonomialIdealOf T R := by
+  unfold MonomialIdealOf
+  have sub : {x : MvPolynomial σ R | ∃ g ∈ S, g = x} ⊆ {y | ∃ g ∈ T, g = y} := by
+    intro a ha
+    obtain ⟨ g, hg ⟩ := ha
+    use g
+    exact ⟨h hg.left, hg.right ⟩
+  exact Ideal.span_mono sub
+
+
 /-
 The regular monomial X^n, for n : σ
 -/
@@ -124,6 +137,54 @@ example (n : σ): IsMonomialIdeal (MonomialIdealOf {_root_.X n } R) :=
   monIdeal_of {_root_.X n }
 
 #check Ideal.mem_span
+
+#check MvPolynomial.support_monomial
+
+#check support_monomial_subset
+
+#check support_monomial
+
+
+theorem supp_of_monomial [nt: Nontrivial R] (x : Monomial σ) :
+    x ∈ (toMvPolynomial x: MvPolynomial σ R).support := by
+  classical
+  simp [toMvPolynomial]
+  rw [support_monomial]
+  split_ifs with hf
+  · simp
+    exact one_ne_zero hf
+  · simp
+
+
+
+theorem monomialIdeal_iff [nt: Nontrivial R] (I: Ideal (MvPolynomial σ R)) :
+    IsMonomialIdeal I ↔ I = MonomialIdealOf { m | ∃ f ∈ I, m ∈ f.support} R := by
+  constructor
+  · intro hI
+    obtain ⟨S, hS⟩ := hI
+    let A := { m | ∃ f ∈ I, m ∈ f.support }
+    have sub : S ⊆ A := by
+      rw [Set.subset_def]
+      intro x hx
+      have xI : (x: MvPolynomial σ R) ∈ I := by
+        rw[← hS]
+        apply Ideal.subset_span
+        use x
+      use (x: MvPolynomial σ R)
+      constructor
+      · exact xI
+      · exact supp_of_monomial x
+    rw [le_antisymm_iff]
+    constructor
+    · nth_rw 1 [← hS]
+      apply monomialIdealOf_sub
+      exact sub
+
+    -- claim: if m ∈ A, then m ∈ f.support, some f ∈ I.
+    --        write f = ∑ r_i s_i, with s_i ∈ S.
+    --        then f.support = ∪ s_i and thus m ∈ ∪ s_i
+
+
 
 -- Theorem 1.7 in Herzog
 theorem monIdeal_iff_supp (I : Ideal (MvPolynomial σ R)) :
