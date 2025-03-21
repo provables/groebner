@@ -82,9 +82,8 @@ def toMvPolynomial : Monomial σ →* MvPolynomial σ R where
     ring
 
 theorem toMvPolynomial_injective [Nontrivial R] :
-    Function.Injective (toMvPolynomial : Monomial σ →* MvPolynomial σ R) := by
-  apply monomial_left_injective
-  exact one_ne_zero
+    Function.Injective (toMvPolynomial : Monomial σ →* MvPolynomial σ R) :=
+  monomial_left_injective one_ne_zero
 
 instance : Coe (σ →₀ ℕ) (Monomial σ) where
   coe f := Multiplicative.ofAdd f
@@ -168,14 +167,14 @@ theorem IsMonomialIdeal_iff_MvPolynomial_span (I : Ideal (MvPolynomial σ R)) :
         · exact hm.symm
     rw [this]
 
-theorem monomialIdealOf_sub (S: Set (Monomial σ)) (T: Set (Monomial σ)) (R : Type*) [CommSemiring R]
-    (h: S ⊆ T) : MonomialIdealOf S R ≤ MonomialIdealOf T R := by
+theorem monomialIdealOf_sub (S : Set (Monomial σ)) (T : Set (Monomial σ))
+    (h : S ⊆ T) : MonomialIdealOf S R ≤ MonomialIdealOf T R := by
   unfold MonomialIdealOf
   have sub : {x : MvPolynomial σ R | ∃ g ∈ S, g = x} ⊆ {y | ∃ g ∈ T, g = y} := by
     intro a ha
-    obtain ⟨ g, hg ⟩ := ha
+    obtain ⟨g, hg⟩ := ha
     use g
-    exact ⟨h hg.left, hg.right ⟩
+    exact ⟨h hg.left, hg.right⟩
   exact Ideal.span_mono sub
 
 /-
@@ -290,7 +289,7 @@ theorem dickson_lemma (hs : Finite σ) (s : Set (Monomial σ)) (h : Nonempty s) 
   sorry
 
 /-- Corollary 1.10 in Herzog -/
-theorem bar
+theorem finite_MonomialIdeal_of_MonomialIdeal
   (I : Ideal (MvPolynomial σ R))
   (S : Set (Monomial σ))
   (hI : MonomialIdealOf S R = I) :
