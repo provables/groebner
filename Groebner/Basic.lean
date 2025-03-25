@@ -105,29 +105,35 @@ instance : LE (OrderedMonomial m) where
 
 def IsMonomial (f : MvPolynomial σ R) := ∃ m : Monomial σ, f = m
 
+theorem IsMonomial_iff_range (f : MvPolynomial σ R) :
+    IsMonomial f ↔ f ∈ Set.range toMvPolynomial :=
+  ⟨fun ⟨a, h⟩ ↦ ⟨a, h.symm⟩, fun ⟨a, h⟩ ↦ ⟨a, h.symm⟩⟩
+
 theorem IsMonomial_iff_support [DecidableEq σ] [DecidableEq R] [Nontrivial R]
     (f : MvPolynomial σ R) : IsMonomial f ↔ ∃ m : Monomial σ, f.support = {m} ∧ coeff m f = 1 := by
   constructor
   · rintro ⟨m, hm⟩
     use m
-    simp [toMvPolynomial] at hm
+    simp only [toMvPolynomial] at hm
     simp [hm, support_monomial, reduceIte]
   · rintro ⟨m, ⟨hml, hmr⟩⟩
     use m
-    simp [toMvPolynomial]
-    ext x
-    simp [hml]
-    by_cases h : m = x
-    · simp [h, reduceIte]
-      rwa [<- h]
-    · simp [h]
-      apply not_mem_support_iff.mp
-      by_contra hx
-      rw [hml] at hx
-      exact h <| (Finset.eq_of_mem_singleton hx).symm
+    simp only [toMvPolynomial, MonoidHom.coe_mk, OneHom.coe_mk]
+    rw [f.as_sum, hml, Finset.sum_singleton, hmr]
 
-noncomputable def MonomialIdealOf (S: Set (Monomial σ)) (R : Type*) [CommSemiring R] :=
-  Ideal.span {(g : MvPolynomial σ R) | g ∈ S}
+theorem foo [DecidableEq σ] [DecidableEq R] [Nontrivial R]
+    (f : MvPolynomial σ R) : IsMonomial f ↔ f.support.card = 1 ∧ f.coeffs = {1} := by
+  constructor
+  · intro hf
+    constructor
+    · obtain ⟨m, hm⟩ := (IsMonomial_iff_support f).mp hf
+      rw [hm.left]
+      exact Finset.card_singleton _
+    · sorry
+  · sorry
+
+noncomputable def MonomialIdealOf (S: Set (Monomial σ)) (R : Type*) [CommSemiring R]
+  : Ideal (MvPolynomial σ R) := Ideal.span (toMvPolynomial '' S)
 
 noncomputable def IsMonomialIdeal (I : Ideal (MvPolynomial σ R)) : Prop :=
   ∃ S : Set (Monomial σ), MonomialIdealOf S R = I
@@ -140,42 +146,18 @@ theorem IsMonomialIdeal_iff_MvPolynomial_span (I : Ideal (MvPolynomial σ R)) :
     ∃ S : Set (MvPolynomial σ R), (∀ p ∈ S, IsMonomial p) ∧ Ideal.span S = I := by
   constructor
   · rintro ⟨S, hS⟩
-    use {(m : MvPolynomial σ R) | m ∈ S}
-    constructor
-    · rintro p ⟨m, hm⟩
-      use m
-      exact hm.right.symm
-    · rw [← hS]
-      rfl
-  · rintro ⟨S, hS⟩
-    let S' := {(m : Monomial σ) | ∃ f ∈ S, f = m}
-    use S'
-    rw [<- hS.right]
-    unfold MonomialIdealOf S'
-    have : {x | ∃ g ∈ {m | ∃ f ∈ S, f = toMvPolynomial m}, toMvPolynomial g = x} = S := by
-      ext x
-      constructor
-      · rintro ⟨x, ⟨hxl, hxr⟩⟩
-        obtain ⟨m, hm⟩ := hxl
-        rw [<- hxr, <- hm.right]
-        exact hm.left
-      · intro hx
-        obtain ⟨m, hm⟩ := hS.left x hx
-        use m
-        constructor
-        · use x
-        · exact hm.symm
-    rw [this]
+    use (toMvPolynomial '' S)
+    exact ⟨fun _ ⟨m, ⟨_, hmEq⟩⟩ => ⟨m, hmEq.symm⟩, hS⟩
+  · rintro ⟨S, ⟨hSM, hSI⟩⟩
+    use toMvPolynomial ⁻¹' S
+    unfold MonomialIdealOf
+    rw [<- hSI]
+    congr
+    exact Set.image_preimage_eq_of_subset <| fun s hs => (IsMonomial_iff_range _).mp (hSM s hs)
 
-theorem monomialIdealOf_sub (S : Set (Monomial σ)) (T : Set (Monomial σ))
-    (h : S ⊆ T) : MonomialIdealOf S R ≤ MonomialIdealOf T R := by
-  unfold MonomialIdealOf
-  have sub : {x : MvPolynomial σ R | ∃ g ∈ S, g = x} ⊆ {y | ∃ g ∈ T, g = y} := by
-    intro a ha
-    obtain ⟨g, hg⟩ := ha
-    use g
-    exact ⟨h hg.left, hg.right⟩
-  exact Ideal.span_mono sub
+theorem monomialIdealOf_mono (S : Set (Monomial σ)) (T : Set (Monomial σ))
+    (h : S ⊆ T) : MonomialIdealOf S R ≤ MonomialIdealOf T R :=
+  Ideal.span_mono <| Set.image_mono h
 
 /-
 The regular monomial X^n, for n : σ
@@ -194,30 +176,29 @@ theorem supp_of_monomial [nt: Nontrivial R] (x : Monomial σ) :
     exact one_ne_zero hf
   · simp
 
-
-
 theorem monomialIdeal_iff [nt: Nontrivial R] (I: Ideal (MvPolynomial σ R)) :
     IsMonomialIdeal I ↔ I = MonomialIdealOf { m | ∃ f ∈ I, m ∈ f.support} R := by
-  constructor
-  · intro hI
-    obtain ⟨S, hS⟩ := hI
-    let A := { m | ∃ f ∈ I, m ∈ f.support }
-    have sub : S ⊆ A := by
-      rw [Set.subset_def]
-      intro x hx
-      have xI : (x: MvPolynomial σ R) ∈ I := by
-        rw[← hS]
-        apply Ideal.subset_span
-        use x
-      use (x: MvPolynomial σ R)
-      constructor
-      · exact xI
-      · exact supp_of_monomial x
-    rw [le_antisymm_iff]
-    constructor
-    · nth_rw 1 [← hS]
-      apply monomialIdealOf_sub
-      exact sub
+  sorry
+  -- constructor
+  -- · intro hI
+  --   obtain ⟨S, hS⟩ := hI
+  --   let A := { m | ∃ f ∈ I, m ∈ f.support }
+  --   have sub : S ⊆ A := by
+  --     rw [Set.subset_def]
+  --     intro x hx
+  --     have xI : (x: MvPolynomial σ R) ∈ I := by
+  --       rw[← hS]
+  --       apply Ideal.subset_span
+  --       use x
+  --     use (x: MvPolynomial σ R)
+  --     constructor
+  --     · exact xI
+  --     · exact supp_of_monomial x
+  --   rw [le_antisymm_iff]
+  --   constructor
+  --   · nth_rw 1 [← hS]
+  --     apply monomialIdealOf_sub
+  --     exact sub
 
     -- claim: if m ∈ A, then m ∈ f.support, some f ∈ I.
     --        write f = ∑ r_i s_i, with s_i ∈ S.
