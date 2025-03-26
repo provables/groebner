@@ -121,16 +121,22 @@ theorem IsMonomial_iff_support [DecidableEq σ] [DecidableEq R] [Nontrivial R]
     simp only [toMvPolynomial, MonoidHom.coe_mk, OneHom.coe_mk]
     rw [f.as_sum, hml, Finset.sum_singleton, hmr]
 
-theorem foo [DecidableEq σ] [DecidableEq R] [Nontrivial R]
+theorem IsMonomial_iff_card [DecidableEq σ] [DecidableEq R] [Nontrivial R]
     (f : MvPolynomial σ R) : IsMonomial f ↔ f.support.card = 1 ∧ f.coeffs = {1} := by
+  rw [IsMonomial_iff_support]
   constructor
-  · intro hf
+  · rintro ⟨m, ⟨hmr, hml⟩⟩
+    simp [hmr, MvPolynomial.coeffs.eq_1, hmr, hml]
+  · rintro ⟨hml, hmr⟩
+    rw [Finset.card_eq_one] at hml
+    obtain ⟨m, hm⟩ := hml
+    use m
     constructor
-    · obtain ⟨m, hm⟩ := (IsMonomial_iff_support f).mp hf
-      rw [hm.left]
-      exact Finset.card_singleton _
-    · sorry
-  · sorry
+    · exact hm
+    · have : f.coeff m ∈ ({1} : Finset R) := by
+        rw [<- hmr]
+        exact coeff_mem_coeffs m (by apply mem_support_iff.mp; simp [hm])
+      exact Finset.eq_of_mem_singleton this
 
 noncomputable def MonomialIdealOf (S: Set (Monomial σ)) (R : Type*) [CommSemiring R]
   : Ideal (MvPolynomial σ R) := Ideal.span (toMvPolynomial '' S)
