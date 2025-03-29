@@ -147,6 +147,28 @@ noncomputable def IsMonomialIdeal (I : Ideal (MvPolynomial σ R)) : Prop :=
 theorem monIdeal_of (S : Set (Monomial σ)) : IsMonomialIdeal (MonomialIdealOf S R) := by
   use S
 
+theorem span_iff_finset (S : Set (MvPolynomial σ R)) (f : MvPolynomial σ R) :
+    f ∈ Ideal.span S ↔
+      ∃ (T : Finset (MvPolynomial σ R)) (f1 : MvPolynomial σ R → MvPolynomial σ R),
+        ↑T ⊆ S ∧ f = ∑ i ∈ T, f1 i * i := by
+  constructor
+  · intro hf
+    obtain ⟨T, ⟨hTS, hT⟩⟩ := Submodule.mem_span_finite_of_mem_span hf
+    obtain ⟨f1, hf1⟩ := mem_span_finset.mp hT
+    use T
+    use f1
+    exact ⟨hTS, hf1.symm⟩
+  · rintro ⟨T, f1, ⟨hSub, hf1⟩⟩
+    suffices h : f ∈ Ideal.span T by exact Ideal.span_mono hSub h
+    apply mem_span_finset.mpr
+    use f1
+    exact hf1.symm
+
+theorem span_iff_finite_sum (S : Set (MvPolynomial σ R)) (f : MvPolynomial σ R) :
+    f ∈ Ideal.span S
+      ↔ ∃ (n : ℕ) (a : Fin n → MvPolynomial σ R) (m : Fin n → S),
+        ∑ i, (a i) * (m i) = f := mem_span_set'
+
 theorem IsMonomialIdeal_iff_MvPolynomial_span (I : Ideal (MvPolynomial σ R)) :
   IsMonomialIdeal I ↔
     ∃ S : Set (MvPolynomial σ R), (∀ p ∈ S, IsMonomial p) ∧ Ideal.span S = I := by
