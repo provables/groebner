@@ -5,3 +5,25 @@
 % If you want to split the blueprint content into several files then
 % the current file can be a simple sequence of \input. Otherwise It
 % can start with a \section or \chapter for instance.
+
+\chapter{Monomial Ideals}
+
+\section{Definitions}
+
+\begin{definition}[Monomial]\label{defn:monomial}
+    \lean{Monomial}
+    \leanok
+    % \uses{defn:homogeneous}
+    Monomials are the multiplicative version of finitely supported functions on $\mathbb{N}$.    
+\end{definition}
+
+\begin{theorem}[IsMonomialiffrange]\label{thm:IsMonomial_iff_range}
+    \lean{IsMonomial_iff_range}
+    \leanok
+    \uses{defn:monomial}
+    A polynomial $f$ is a monomial if and only if it's in the image of the 
+    embedding $Monomial \sigma \hookleftarrow MvPolynomial \sigma$.
+\end{theorem}
+\begin{proof}\leanok
+    The proof is simple.
+\end{proof}
