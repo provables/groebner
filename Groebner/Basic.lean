@@ -212,11 +212,67 @@ theorem supp_of_monomial [nt: Nontrivial R] (x : Monomial σ) :
     exact one_ne_zero hf
   · simp
 
+#check Ideal.span_mono
+
 theorem monomialIdeal_iff [nt: Nontrivial R] (I: Ideal (MvPolynomial σ R)) :
     IsMonomialIdeal I ↔ I = MonomialIdealOf { m | ∃ f ∈ I, m ∈ f.support} R := by
-  sorry
-  -- constructor
-  -- · intro hI
+  classical
+  constructor
+  · intro hI
+    rw [IsMonomialIdeal_iff_MvPolynomial_span] at hI
+    let M := { m | ∃ f ∈ I, m ∈ f.support }
+    obtain ⟨P, hP⟩ := hI
+    ext f
+    constructor
+    · intro fI
+      have fP : f ∈ Ideal.span P := by
+        rw [hP.right]
+        exact fI
+      have PI : P ⊆ I := by
+        rw [← hP.right]
+        exact Ideal.subset_span
+      rw [MonomialIdealOf]
+      rw [span_iff_finset] at fP
+      obtain ⟨ T, f1, ⟨ hleft, hright ⟩ ⟩ := fP
+      have PsI : P ⊆ toMvPolynomial '' {m | ∃ f ∈ I, m ∈ f.support} := by
+        rw [Set.subset_def]
+        intro p pmem
+        whnf
+        obtain ⟨ m, hm ⟩ := hP.left p pmem
+        use m
+        constructor
+        · use p
+          constructor
+          · exact PI pmem
+          · rw [hm]
+            simp [toMvPolynomial]
+            rw [support_monomial]
+            simp [reduceIte]
+        · exact hm.symm
+      have ISPs : Ideal.span P ≤ Ideal.span (toMvPolynomial '' {m | ∃ f ∈ I, m ∈ f.support}) := by
+        exact Ideal.span_mono PsI
+      have fISP : f ∈ Ideal.span P := by
+        rw [hright]
+        refine Submodule.sum_smul_mem (Ideal.span P) f1 ?_
+        intro c hc
+        apply hleft at hc
+        exact (Ideal.mem_span c).mpr fun p a ↦ a hc
+
+
+
+
+      exact ISPs fISP
+
+
+
+
+
+
+
+
+
+
+
   --   obtain ⟨S, hS⟩ := hI
   --   let A := { m | ∃ f ∈ I, m ∈ f.support }
   --   have sub : S ⊆ A := by
