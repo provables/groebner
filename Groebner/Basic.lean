@@ -183,6 +183,14 @@ theorem IsMonomialIdeal_iff_MvPolynomial_span (I : Ideal (MvPolynomial σ R)) :
     congr
     exact Set.image_preimage_eq_of_subset <| fun s hs => (IsMonomial_iff_range _).mp (hSM s hs)
 
+
+theorem IsMonomialIdeal_iff_MvPolynomial_span2 (I : Ideal (MvPolynomial σ R)) :
+    IsMonomialIdeal I ↔
+      ∃ S : Set (MvPolynomial σ R), Ideal.span S = I ∧
+        (∀ p ∈ S, p.support.card = 1 ∧ p.coeffs = {1}) := by
+  sorry
+
+
 theorem monomialIdealOf_mono (S : Set (Monomial σ)) (T : Set (Monomial σ))
     (h : S ⊆ T) : MonomialIdealOf S R ≤ MonomialIdealOf T R :=
   Ideal.span_mono <| Set.image_mono h
